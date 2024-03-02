@@ -2,6 +2,7 @@
 
 import cv2
 import mediapipe as mp
+import numpy as np
 import pyautogui
 import math
 from enum import IntEnum
@@ -81,6 +82,9 @@ class HandRecog:
         self.frame_count = 0
         self.hand_result = None
         self.hand_label = hand_label
+        self.pinky_shown = False
+        self.prev_pinky_state = False
+        self.n_key_pressed = False
     
     def update_hand_result(self, hand_result):
         self.hand_result = hand_result
@@ -220,6 +224,10 @@ class HandRecog:
                     current_gesture =  Gest.TWO_FINGER_CLOSED
                 else:
                     current_gesture =  Gest.MID
+        
+        elif self.finger == 1:
+            current_pinky_state = True
+            current_gesture = Gest.INDEX_FINGER_EXTENDED
                 
             
         else:
@@ -435,6 +443,10 @@ class Controller:
                 Controller.framecount = 0
 
     def handle_controls(gesture, hand_result):  
+        prev_pinky_state = False
+        current_pinky_state = False
+        prev_pinky_state = False
+        n_key_pressed =False
         """Impliments all gesture functionality."""      
         x,y = None,None
         if gesture != Gest.PALM :
@@ -455,13 +467,17 @@ class Controller:
         if gesture == Gest.V_GEST:                                                            
             Controller.flag = True
             pyautogui.moveTo(x, y, duration = 0.09)
+            
             # pyautogui.press('space')
 
-        # elif gesture == Gest.INDEX_FINGER_EXTENDED:            
-        # # Trigger space button press
-        #     pyautogui.press('n')
-        #     Controller.flag = True
-        #     pyautogui.moveTo(x, y, duration = 0.09)
+        elif gesture == Gest.INDEX_FINGER_EXTENDED and not prev_pinky_state:            
+        # Trigger space button press
+            if not n_key_pressed:
+                pyautogui.press('n')
+                n_key_pressed = True
+            if not current_pinky_state and prev_pinky_state:
+            # Reset the click state when the pinky finger is hidden 
+                n_key_pressed = False
 
         elif gesture == Gest.FIST:
             if not Controller.grabflag : 
@@ -581,7 +597,7 @@ class GestureController:
         handmajor = HandRecog(HLabel.MAJOR)
         handminor = HandRecog(HLabel.MINOR)
 
-        with mp_hands.Hands(max_num_hands = 1,min_detection_confidence=0.5, min_tracking_confidence=0.5) as hands:
+        with mp_hands.Hands(max_num_hands = 1,min_detection_confidence=0.3, min_tracking_confidence=0.3) as hands:
             while GestureController.cap.isOpened() and GestureController.gc_mode:
                 success, image = GestureController.cap.read()
 
@@ -613,13 +629,36 @@ class GestureController:
                         Controller.handle_controls(gest_name, handmajor.hand_result)
                     
                     for hand_landmarks in results.multi_hand_landmarks:
-                        mp_drawing.draw_landmarks(image, hand_landmarks, mp_hands.HAND_CONNECTIONS)
+                        # mp_drawing.draw_landmarks(image, hand_landmarks, mp_hands.HAND_CONNECTIONS)
+                        
+                        # Get the landmark coordinates you want to draw a circle around
+                        # For example, if you want to draw a circle around the tip of the index finger (landmark point 8):
+                        index_finger_tip = hand_landmarks.landmark[8]
+                        thumb_finger_tip = hand_landmarks.landmark[4]
+                        middle_finger_tip = hand_landmarks.landmark[12]
+                        ring_finger_tip = hand_landmarks.landmark[16]
+                        pinky_finger_tip = hand_landmarks.landmark[20]
+                        
+                        # Convert landmark coordinates to pixel values
+                        image_height, image_width, _ = image.shape
+                        ax, ay = int(index_finger_tip.x * image_width), int(index_finger_tip.y * image_height)
+                        bx, by = int(thumb_finger_tip.x * image_width), int(thumb_finger_tip.y * image_height)
+                        cx, cy = int(middle_finger_tip.x * image_width), int(middle_finger_tip.y * image_height)
+                        dx, dy = int(ring_finger_tip.x * image_width), int(ring_finger_tip.y * image_height)
+                        ex, ey = int(pinky_finger_tip.x * image_width), int(pinky_finger_tip.y * image_height)
+                        
+                        # Draw a circle around the landmark point
+                        cv2.circle(image, (ax, ay), radius=10, color=(0, 255, 0), thickness=2)
+                        cv2.circle(image, (bx, by), radius=10, color=(0, 255, 0), thickness=2)
+                        cv2.circle(image, (cx, cy), radius=10, color=(0, 255, 0), thickness=2)
+                        cv2.circle(image, (dx, dy), radius=10, color=(0, 255, 0), thickness=2)
+                        cv2.circle(image, (ex, ey), radius=10, color=(0, 255, 0), thickness=2)
 
                 else:
                     Controller.prev_hand = None
                 cv2.namedWindow('Gesture Controller', cv2.WINDOW_NORMAL)  # Create a resizable window
                 cv2.setWindowProperty('Gesture Controller', cv2.WND_PROP_TOPMOST, 1)
-                cv2.resizeWindow('Gesture Controller', 500, 500)  
+                cv2.resizeWindow('Gesture Controller', 500, 500)
                 cv2.imshow('Gesture Controller', image)           
                 if cv2.waitKey(5) & 0xFF == 13:
                     break
