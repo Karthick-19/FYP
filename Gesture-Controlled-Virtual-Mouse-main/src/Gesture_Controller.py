@@ -289,13 +289,14 @@ class Controller:
     
     def changesystembrightness():
         """sets system brightness based on 'Controller.pinchlv'."""
-        currentBrightnessLv = sbcontrol.get_brightness(display=0)/100.0
-        currentBrightnessLv += Controller.pinchlv/50.0
+        currentBrightnessLv = sbcontrol.get_brightness(display=0)[0]/100.0
+        # currentBrightnessLv = 1.0
+        currentBrightnessLv += Controller.pinchlv/25.0
         if currentBrightnessLv > 1.0:
             currentBrightnessLv = 1.0
         elif currentBrightnessLv < 0.0:
             currentBrightnessLv = 0.0       
-        sbcontrol.fade_brightness(int(100*currentBrightnessLv) , start = sbcontrol.get_brightness(display=0))
+        sbcontrol.fade_brightness(int(100*currentBrightnessLv) , start = sbcontrol.get_brightness(display=0)[0])
     
     def changesystemvolume():
         """sets system volume based on 'Controller.pinchlv'."""
