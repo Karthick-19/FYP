@@ -586,6 +586,16 @@ class GestureController:
         else :
             GestureController.hr_major = left
             GestureController.hr_minor = right
+    # def get_bounding_box(hand_landmarks):
+    #     """Calculate the bounding box coordinates of the hand."""
+    #     x_values = [landmark.x for landmark in hand_landmarks.landmark]
+    #     y_values = [landmark.y for landmark in hand_landmarks.landmark]
+    #     x_min = int(min(x_values) * image_width)
+    #     x_max = int(max(x_values) * image_width)
+    #     y_min = int(min(y_values) * image_height)
+    #     y_max = int(max(y_values) * image_height)
+    #     return x_min, y_min, x_max, y_max
+
 
     def start(self):
         """
@@ -600,6 +610,7 @@ class GestureController:
         with mp_hands.Hands(max_num_hands = 1,min_detection_confidence=0.3, min_tracking_confidence=0.3) as hands:
             while GestureController.cap.isOpened() and GestureController.gc_mode:
                 success, image = GestureController.cap.read()
+                image_height,image_width,_ = image.shape
 
                 if not success:
                     print("Ignoring empty camera frame.")
@@ -622,6 +633,16 @@ class GestureController:
                     gest_name = handminor.get_gesture()
                     color = (255, 0, 0)
 
+                    def get_bounding_box(hand_landmarks):
+                        """Calculate the bounding box coordinates of the hand."""
+                        x_values = [landmark.x for landmark in hand_landmarks.landmark]
+                        y_values = [landmark.y for landmark in hand_landmarks.landmark]
+                        x_min = int(min(x_values) * image_width)
+                        x_max = int(max(x_values) * image_width)
+                        y_min = int(min(y_values) * image_height)
+                        y_max = int(max(y_values) * image_height)
+                        return x_min, y_min, x_max, y_max
+
                     if gest_name == Gest.PINCH_MINOR:
                         Controller.handle_controls(gest_name, handminor.hand_result)
                     else:
@@ -633,6 +654,11 @@ class GestureController:
                         
                         # Get the landmark coordinates you want to draw a circle around
                         # For example, if you want to draw a circle around the tip of the index finger (landmark point 8):
+                         # Extract the bounding box coordinates of the hand
+                        x_min, y_min, x_max, y_max = get_bounding_box(hand_landmarks)
+
+                        # Draw a rectangle around the hand
+                        cv2.rectangle(image, (x_min, y_min), (x_max, y_max), (255, 0, 0), 8)  # Adjust color and thickness as needed
                         index_finger_tip = hand_landmarks.landmark[8]
                         thumb_finger_tip = hand_landmarks.landmark[4]
                         middle_finger_tip = hand_landmarks.landmark[12]
