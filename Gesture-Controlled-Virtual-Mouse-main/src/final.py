@@ -586,16 +586,6 @@ class GestureController:
         else :
             GestureController.hr_major = left
             GestureController.hr_minor = right
-    # def get_bounding_box(hand_landmarks):
-    #     """Calculate the bounding box coordinates of the hand."""
-    #     x_values = [landmark.x for landmark in hand_landmarks.landmark]
-    #     y_values = [landmark.y for landmark in hand_landmarks.landmark]
-    #     x_min = int(min(x_values) * image_width)
-    #     x_max = int(max(x_values) * image_width)
-    #     y_min = int(min(y_values) * image_height)
-    #     y_max = int(max(y_values) * image_height)
-    #     return x_min, y_min, x_max, y_max
-
 
     def start(self):
         """
